@@ -10,7 +10,6 @@ from components.text2cypher import Text2Cypher
 from driver.neo4j import Neo4jDatabase
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
 from utils.fewshot_examples import get_fewshot_examples
 from llm.openai import OpenAIChat
 from pydantic import BaseModel
@@ -28,11 +27,6 @@ class ImportPayload(BaseModel):
     input: str
     neo4j_schema: Optional[str]
     api_key: Optional[str]
-
-
-class questionProposalPayload(BaseModel):
-    api_key: Optional[str]
-
 
 # Maximum number of records used in the context
 HARD_LIMIT_CONTEXT_RECORDS = 10
@@ -57,18 +51,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.get("/hasapikey")
-async def hasApiKey():
-    return JSONResponse(content={"output": openai_api_key is not None})
-
-@app.post("/questionProposalsForCurrentDb")
-async def questionProposalsForCurrentDb(payload: questionProposalPayload):
-    if not openai_api_key and not payload.api_key:
-        raise HTTPException(
-            status_code=422,
-            detail="Please set OPENAI_API_KEY environment variable or send it as api_key in the request body",
-        )
-    api_key = openai_api_key if openai_api_key else payload.api_key
+@app.get("/questionProposalsForCurrentDb")
+async def questionProposalsForCurrentDb():
+    api_key = openai_api_key;
 
     questionProposalGenerator = QuestionProposalGenerator(
         database=neo4j_connection,
