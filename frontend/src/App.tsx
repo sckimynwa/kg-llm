@@ -9,31 +9,13 @@ import type {
   WebSocketResponse,
 } from "./components/types/websocketTypes";
 
-// const chatMessageObjects: ChatMessageObject[] = [
-//   {
-//     id: 0,
-//     type: "input",
-//     sender: "self",
-//     message:
-//       "This is the first message which has decently long text and would denote something typed by the user",
-//     complete: true,
-//   },
-//   {
-//     id: 1,
-//     type: "text",
-//     sender: "bot",
-//     message:
-//       "And here is another message which would denote a response from the server, which for now will only be text",
-//     complete: true,
-//   },
-// ];
-
-// eslint-disable-next-line no-useless-escape
-const QUESTION_PREFIX_REGEXP = /^[0-9]{1,2}[\w]*[\.\)\-]*[\w]*/;
+const TEXT_TO_CYPHER_MODEL = "gpt-3.5-turbo-0613";
 const URI = "ws://localhost:7860/text2text";
 const QUESTIONS_URI = "http://localhost:7860/questionProposalsForCurrentDb";
 
 function stripQuestionPrefix(question: string): string {
+  const QUESTION_PREFIX_REGEXP = /^[0-9]{1,2}[\w]*[.)-]*[\w]*/;
+
   if (question.match(QUESTION_PREFIX_REGEXP)) {
     return question.replace(QUESTION_PREFIX_REGEXP, "");
   }
@@ -44,34 +26,27 @@ function App() {
   const [chatMessages, setChatMessages] = useState<ChatMessageObject[]>([]);
   const [conversationState, setConversationState] =
     useState<ConversationState>("ready");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [sampleQuestions, setSampleQuestions] = useState<string[]>([]);
+
   const { sendJsonMessage, lastMessage, readyState } = useWebSocket(URI, {
     shouldReconnect: () => true,
     reconnectInterval: 5000,
   });
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [sampleQuestions, setSampleQuestions] = useState<string[]>([]);
-  const text2cypherModel = "gpt-3.5-turbo-0613";
 
   useEffect(() => {
-    function loadSampleQuestions() {
+    async function loadSampleQuestions() {
       const options = {
         method: "GET",
         headers: { "Content-Type": "application/json" },
       };
-      fetch(QUESTIONS_URI, options).then(
-        (response) => {
-          response.json().then((result) => {
-            if (result.output && result.output.length > 0) {
-              setSampleQuestions(result.output.map(stripQuestionPrefix));
-            } else {
-              setSampleQuestions([]);
-            }
-          });
-        },
-        () => {
-          setSampleQuestions([]);
-        }
-      );
+      try {
+        const response = await fetch(QUESTIONS_URI, options);
+        const result = await response.json();
+        setSampleQuestions(result.output?.map(stripQuestionPrefix) ?? []);
+      } catch (err) {
+        setSampleQuestions([]);
+      }
     }
 
     loadSampleQuestions();
@@ -129,7 +104,6 @@ function App() {
       });
       setConversationState("ready");
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lastMessage]);
 
   useEffect(() => {
@@ -146,7 +120,7 @@ function App() {
       type: "question",
       question: question,
     };
-    webSocketRequest.model_name = text2cypherModel;
+    webSocketRequest.model_name = TEXT_TO_CYPHER_MODEL;
     sendJsonMessage(webSocketRequest);
   };
 
@@ -185,7 +159,7 @@ function App() {
             />
             {errorMessage}
           </>
-        )}{" "}
+        )}
         {readyState === ReadyState.CONNECTING && <div>Connecting...</div>}
         {readyState === ReadyState.CLOSED && (
           <div className="flex flex-col">
