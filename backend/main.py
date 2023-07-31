@@ -51,8 +51,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.get("/questionProposalsForCurrentDb")
-async def questionProposalsForCurrentDb():
+@app.get("/recommend")
+async def recommend():
     api_key = openai_api_key;
 
     questionProposalGenerator = QuestionProposalGenerator(
@@ -66,8 +66,6 @@ async def questionProposalsForCurrentDb():
     )
 
     return questionProposalGenerator.run()
-
-
 
 @app.websocket("/text2text")
 async def websocket_endpoint(websocket: WebSocket):

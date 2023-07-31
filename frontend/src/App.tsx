@@ -11,7 +11,7 @@ import type {
 
 const TEXT_TO_CYPHER_MODEL = "gpt-3.5-turbo-0613";
 const URI = "ws://localhost:7860/text2text";
-const QUESTIONS_URI = "http://localhost:7860/questionProposalsForCurrentDb";
+const QUESTIONS_URI = "http://localhost:7860/recommend";
 
 function stripQuestionPrefix(question: string): string {
   const QUESTION_PREFIX_REGEXP = /^[0-9]{1,2}[\w]*[.)-]*[\w]*/;
